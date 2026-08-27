@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 from statistics import median
@@ -72,7 +73,18 @@ class RunMetrics(BaseModel):
         3. Write a single-row CSV with csv.DictWriter (import csv at top of file)
         4. Create parent directories if needed
         """
-        raise NotImplementedError("TODO: implement write_csv()")
+        report = self.to_report_dict()
+        scenarios = report.pop("scenarios")
+        row: dict[str, object] = report
+        if isinstance(scenarios, dict):
+            for name, status in scenarios.items():
+                row[f"scenario_{name}"] = status
+
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=list(row.keys()))
+            writer.writeheader()
+            writer.writerow(row)
 
 
 def percentile(values: Iterable[float], q: float) -> float:
